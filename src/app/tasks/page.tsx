@@ -124,7 +124,7 @@ export default function TasksPage() {
     }
   };
 
-  const getTaskTypeUrl = (type: ProjectType, projectId: string) => {
+  const getTaskTypeUrl = (type: ProjectType, projectId: string,taskId:string="") => {
     switch (type) {
       case "text_classification":
         return `/tasks/classification${
@@ -140,7 +140,7 @@ export default function TasksPage() {
         }`;
       case "human_translation":
         return `/tasks/translation${
-          projectId ? `?projectId=${projectId}` : ""
+          projectId ? `?projectId=${projectId}&taskId=${taskId}` : ""
         }`;
       case "post_editing":
         return `/tasks/post-editing${
@@ -237,7 +237,7 @@ export default function TasksPage() {
                   <Link
                     href={getTaskTypeUrl(
                       group.type,
-                      group.projects[0].project._id
+                      group.projects[0].project._id,
                     )}
                   >
                     <Button>
@@ -303,7 +303,8 @@ export default function TasksPage() {
                                     <Link
                                       href={getTaskTypeUrl(
                                         group.type,
-                                        projectGroup.project._id
+                                        projectGroup.project._id,
+                                        task._id
                                       )}
                                     >
                                       <Button size="sm">

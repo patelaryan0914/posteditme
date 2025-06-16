@@ -40,7 +40,7 @@ export default function DashboardPage() {
 
   // Fetch user's tasks
   const { data: tasksData, isLoading: tasksLoading } =
-    trpc.task.getMyAdminTasks.useQuery(undefined, {
+    trpc.task.getMyTasks.useQuery(undefined, {
       enabled: !!user?._id,
     });
 
@@ -122,7 +122,7 @@ export default function DashboardPage() {
 
   const { data: agentStats, isLoading: agentStatsLoading } =
     trpc.agent.getAgentStats.useQuery(undefined, {
-      enabled: isAgentAdmin, // Only fetch if user is an agent admin
+      enabled: isAgentAdmin, 
     });
 
   // Update the stats object to use the agent stats

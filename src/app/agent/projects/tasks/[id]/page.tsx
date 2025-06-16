@@ -58,6 +58,7 @@ export default function TaskViewPage() {
     );
   const updateClassificationTask =
     trpc.task.updateClassificationTask.useMutation();
+  const updateTranslationTask = trpc.task.updateTranslationTask.useMutation()
 
   useEffect(() => {
     if (taskData?.task) {
@@ -164,13 +165,19 @@ export default function TaskViewPage() {
     }
   };
   const handleTranslationSubmitTask = async (
-    taskId:string,index:number, translationData:TranslationSegment
+    taskId:string,
+    index:number, 
+    translationData:TranslationSegment
   ) => {
     if (!user?._id) return;
     try {
-      
+      await updateTranslationTask.mutateAsync({
+        taskId,
+        index,
+        translationData: { ...translationData }
+      })
       refetchTask();
-      toast.success("Task completed successfully");
+      toast.success("Task saved successfully");
     } catch (error) {
       console.error("Error submitting task:", error);
       toast.error("Failed to submit task");
@@ -339,8 +346,7 @@ export default function TaskViewPage() {
       case "sequence_tagging":
         return <p>sequence_tagging</p>;
       case "human_translation":
-          return <TranslationUserView  task={taskData?.task} onSaveTranslation={(taskId,index, translationData)=>{console.log(taskId,index, translationData);
-          }}/>
+          return <TranslationUserView  task={taskData?.task} onSaveTranslation={handleTranslationSubmitTask}/>
           ;
 
       default:

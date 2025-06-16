@@ -39,18 +39,17 @@ export const taskRouter = router({
           message: "Only system admins and agent admins can create tasks",
         });
       }
-      const Project  = await ProjectModel.findById(input.projectId);
+      const Project = await ProjectModel.findById(input.projectId);
       if (!Project)
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Project not found",
         });
       let task;
-      switch(Project.type)
-      {
+      switch (Project.type) {
         case "text_classification":
           {
-             task = await TaskModel.create(
+            task = await TaskModel.create(
               input?.fileContent?.map((content) => ({
                 name: input.name,
                 description: input.description,
@@ -62,11 +61,11 @@ export const taskRouter = router({
               }))
             );
           }
-          case "human_translation": {
-            const contentArray: string[][] = Array.isArray(input?.fileContent?.[0])
+        case "human_translation": {
+          const contentArray: string[][] = Array.isArray(input?.fileContent?.[0])
             ? (input.fileContent as string[][])
             : [input.fileContent as string[]];
-        
+
           const tasksPayload = contentArray.map((batch, index) => ({
             name: `${input.name} - Part ${index + 1}`,
             description: input.description,
@@ -82,7 +81,7 @@ export const taskRouter = router({
               reviewNotes: "",
             })),
           }));
-        
+
           task = await TaskModel.create(tasksPayload);
           break;
         }
@@ -180,29 +179,22 @@ export const taskRouter = router({
     .input(
       z.object({
         taskId: z.string(),
-        updates: z.object({
-          translationData: z.record(z.unknown()).optional(),
-          taskId: z.string(),
-          status: z
-            .enum(["pending", "in_progress", "review", "completed"])
-            .default("pending")
-            .optional(),
-        }),
+        index: z.number(),
+        translationData: z.record(z.unknown()).optional(),
       })
     )
     .mutation(async ({ input }) => {
-      const { taskId, updates } = input;
-      const task = await TaskModel.findByIdAndUpdate(
-        taskId,
-        { ...updates },
-        { new: true }
+      const { taskId, index, translationData } = input;
+      const task = await TaskModel.updateOne(
+        { _id: taskId },
+        { $set: { [`translationData.${index}`]: translationData } }
       );
       if (!task)
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Task not found",
         });
-      return { success: true, task: task.toJSON() };
+      return { success: true, task: task };
     }),
 
   // Delete a task
@@ -378,4 +370,5 @@ export const taskRouter = router({
 
     return { success: true, tasks: tasks };
   }),
+
 });
