@@ -15,7 +15,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -29,16 +28,6 @@ import { useState } from "react";
 import type { z } from "zod";
 import { toast } from "sonner";
 
-// const PROJECT_TYPES = [
-//   { value: "human_translation", label: "Human Translation" },
-//   { value: "post_editing", label: "Post-Editing" },
-//   { value: "text_classification", label: "Text Classification" },
-//   { value: "sequence_tagging", label: "Sequence Tagging (NER)" },
-//   { value: "literary_translation", label: "Literary Translation" },
-//   { value: "error_marking", label: "Translation Error Marking" },
-//   { value: "translation_rating", label: "Translation Rating" }
-// ];
-
 interface TaskFormProps {
   onSubmit: (values: z.infer<typeof taskFormSchema>) => Promise<void>;
   onCancel: () => void;
@@ -46,7 +35,7 @@ interface TaskFormProps {
   project: Project;
 }
 
-export function TaskForm({
+export function TaskFormClassification({
   onSubmit,
   onCancel,
   initialData,
@@ -75,52 +64,27 @@ export function TaskForm({
     if (!file) return;
     setIsProcessingFile(true);
     setFileName(file.name);
-    switch(project.type){
-      case "text_classification":
-        {
-          try {
-            const text = await file.text();
-            const lines = text
-              .split(/\r?\n/)
-              .map((line) => line.trim())
-              .filter((line) => line.length > 0);
-      
-            setFileContent(lines);
-            form.setValue("name", `Classification Task - ${file.name}`);
-            form.setValue(
-              "description",
-              `Classification tasks from file: ${file.name}`
-            );
-      
-            toast.success(`Loaded ${lines.length} text segments from file`);
-          } catch (error) {
-            console.error("Error reading file:", error);
-            toast.error("Failed to read file. Please try again.");
-          } finally {
-            setIsProcessingFile(false);
-          }
-          break;
-        }
-        case "human_translation":
-          {
-            try {
-              const text = await file.text();
-              const lines = text
-                .split(/\r?\n/)
-                .map((line) => line.trim())
-                .filter((line) => line.length > 0);
-              setFileContent(lines);
-              toast.success(`Loaded ${lines.length} text segments from file`);
-            } catch (error) {
-              console.error("Error reading file:", error);
-              toast.error("Failed to read file. Please try again.");
-            } finally {
-              setIsProcessingFile(false);
-            }
-            break;
-          }
+    try {
+      const text = await file.text();
+      const lines = text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+
+      setFileContent(lines);
+      form.setValue("name", `Classification Task - ${file.name}`);
+      form.setValue(
+        "description",
+        `Classification tasks from file: ${file.name}`
+      );
+
+      toast.success(`Loaded ${lines.length} text segments from file`);
+    } catch (error) {
+      console.error("Error reading file:", error);
+      toast.error("Failed to read file. Please try again.");
+    } finally {
+      setIsProcessingFile(false);
     }
-    
   };
 
   const handleSubmit = async (values: z.infer<typeof taskFormSchema>) => {
@@ -180,7 +144,7 @@ export function TaskForm({
 
               <div className="grid gap-6">
                 {/* File Upload for Text Classification */}
-                {project.type === "text_classification" || project.type === "human_translation" && (
+               
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-lg font-medium">Upload Text</h3>
@@ -250,10 +214,9 @@ export function TaskForm({
                       </div>
                     )}
                   </div>
-                )}
+                
 
-                {/* Basic Task Information */}
-                {!project.type.includes("classification") &&
+                {/* {!project.type.includes("classification") &&
                   !project.type.includes("rating") && (
                     <div className="grid gap-4">
                       <h3 className="text-lg font-medium">Basic Information</h3>
@@ -294,17 +257,17 @@ export function TaskForm({
                         )}
                       />
                     </div>
-                  )}
+                  )} */}
 
                 {/* Priority Selection */}
+                <div className="grid grid-cols-2 w-full ">
                 <div>
-                  <h3 className="text-lg font-medium mb-4">Priority</h3>
                   <FormField
                     control={form.control}
                     name="priority"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Priority Level</FormLabel>
+                        <FormLabel className="text-lg font-medium">Priority Level</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -321,9 +284,7 @@ export function TaskForm({
                             <SelectItem value="high">High</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormDescription>
-                          Set the priority level for this task
-                        </FormDescription>
+                        
                         <FormMessage />
                       </FormItem>
                     )}
@@ -332,13 +293,13 @@ export function TaskForm({
 
                 {/* Due Date */}
                 <div>
-                  <h3 className="text-lg font-medium mb-4">Due Date</h3>
                   <FormField
                     control={form.control}
                     name="dueDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Due Date</FormLabel>
+                        <FormLabel className="text-lg font-medium">Due Date</FormLabel>
+
                         <FormControl>
                           <Input
                             type="date"
@@ -346,6 +307,7 @@ export function TaskForm({
                             onChange={(e) =>
                               field.onChange(new Date(e.target.value))
                             }
+                            className="w-2/5"
                             disabled={isSubmitting}
                           />
                         </FormControl>
@@ -353,6 +315,7 @@ export function TaskForm({
                       </FormItem>
                     )}
                   />
+                </div>
                 </div>
               </div>
 
@@ -368,9 +331,7 @@ export function TaskForm({
                 <Button
                   type="submit"
                   disabled={
-                    isSubmitting ||
-                    (project.type === "text_classification" &&
-                      fileContent.length === 0)
+                    isSubmitting || fileContent.length === 0
                   }
                 >
                   {isSubmitting ? (

@@ -12,6 +12,8 @@ import { trpc } from "@/app/_trpc/client";
 import { TaskForm } from "@/components/tasks/task-form";
 import { TaskList } from "@/components/tasks/task-list";
 import { useState } from "react";
+import { TaskFormClassification } from "@/components/tasks/classification/task-form-classification";
+import { TaskFormTranslation } from "@/components/tasks/translation/task-form-translation";
 export default function ProjectDetailsPage() {
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
@@ -116,7 +118,49 @@ export default function ProjectDetailsPage() {
       <div className="min-h-screen bg-background">
         <Header email={user?.email || ""} isAgentAdmin={true} />
         <main className="container mx-auto p-8">
-          <TaskForm
+          {
+            projectData?.project.type === "text_classification" && <TaskFormClassification  project={projectData?.project}
+              onSubmit={async (values) => {
+                try {
+                  setLoading(true);
+                  await createTask.mutateAsync(values);
+                  refetchTasks();
+                } catch (error) {
+                  console.error("Error creating task:", error);
+                  toast.error("Failed to create task");
+                } finally {
+                  setLoading(false);
+                  setShowForm(false);
+                }
+              }}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingTask(null);
+              }}
+              initialData={editingTask}/>
+          }
+          {
+            projectData?.project.type === "human_translation" && <TaskFormTranslation  project={projectData?.project}
+              onSubmit={async (values) => {
+                try {
+                  setLoading(true);
+                  await createTask.mutateAsync(values);
+                  refetchTasks();
+                } catch (error) {
+                  console.error("Error creating task:", error);
+                  toast.error("Failed to create task");
+                } finally {
+                  setLoading(false);
+                  setShowForm(false);
+                }
+              }}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingTask(null);
+              }}
+              initialData={editingTask}/>
+          }
+          {/* <TaskForm
             project={projectData?.project}
             onSubmit={async (values) => {
               try {
@@ -136,7 +180,7 @@ export default function ProjectDetailsPage() {
               setEditingTask(null);
             }}
             initialData={editingTask}
-          />
+          /> */}
         </main>
       </div>
     );

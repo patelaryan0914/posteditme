@@ -26,7 +26,10 @@ export const taskRouter = router({
           .optional(),
         classificationData: z.record(z.unknown()).optional(),
         dueDate: z.date().optional(),
-        fileContent: z.array(z.string()).optional(),
+        fileContent: z.union([
+          z.array(z.string()),
+          z.array(z.array(z.string()))
+        ]).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -36,18 +39,55 @@ export const taskRouter = router({
           message: "Only system admins and agent admins can create tasks",
         });
       }
+      const Project  = await ProjectModel.findById(input.projectId);
+      if (!Project)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Project not found",
+        });
+      let task;
+      switch(Project.type)
+      {
+        case "text_classification":
+          {
+             task = await TaskModel.create(
+              input?.fileContent?.map((content) => ({
+                name: input.name,
+                description: input.description,
+                projectId: input.projectId,
+                status: input.status,
+                priority: input.priority,
+                classificationData: { text: content },
+                dueDate: input.dueDate,
+              }))
+            );
+          }
+          case "human_translation": {
+            const contentArray: string[][] = Array.isArray(input?.fileContent?.[0])
+            ? (input.fileContent as string[][])
+            : [input.fileContent as string[]];
+        
+          const tasksPayload = contentArray.map((batch, index) => ({
+            name: `${input.name} - Part ${index + 1}`,
+            description: input.description,
+            projectId: input.projectId,
+            status: input.status,
+            priority: input.priority,
+            dueDate: input.dueDate,
+            text: batch.join("\n"),
+            translationData: batch.map((line) => ({
+              sourceText: line,
+              translatedText: "",
+              comments: "",
+              reviewNotes: "",
+            })),
+          }));
+        
+          task = await TaskModel.create(tasksPayload);
+          break;
+        }
 
-      const task = await TaskModel.create(
-        input?.fileContent?.map((content) => ({
-          name: input.name,
-          description: input.description,
-          projectId: input.projectId,
-          status: input.status,
-          priority: input.priority,
-          classificationData: { text: content },
-          dueDate: input.dueDate,
-        }))
-      );
+      }
 
       return { success: true, task };
     }),

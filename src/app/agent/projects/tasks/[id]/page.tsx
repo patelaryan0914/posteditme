@@ -24,7 +24,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/app/_trpc/client";
 import { useAuth } from "@/lib/auth-context";
-
+import { TranslationUserView } from "@/components/tasks/translation/user-view-traslation";
+interface TranslationSegment {
+  sourceText: string;
+  translatedText?: string;
+  comments?: string;
+  reviewNotes?: string;
+}
 export default function TaskViewPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -36,9 +42,6 @@ export default function TaskViewPage() {
   const [reviewNotes, setReviewNotes] = useState<string>("");
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(-1);
-  // const [tags, setTags] = useState<SequenceTag[]>([]);
-  // const [notes, setNotes] = useState<string>("");
-
   const { data: taskData, refetch: refetchTask } = trpc.task.getById.useQuery(
     { id: taskId as string },
     { enabled: !!taskId }
@@ -59,14 +62,6 @@ export default function TaskViewPage() {
   useEffect(() => {
     if (taskData?.task) {
       setTask(taskData.task);
-      // if (taskData.translationRatingData) {
-      //   setRatings(taskData.translationRatingData.categories || {});
-      //   setJustification(taskData.translationRatingData.justification || "");
-      //   setReviewNotes(taskData.translationRatingData.reviewNotes || "");
-      // } else if (taskData.sequenceTaggingData) {
-      //   setTags(taskData.sequenceTaggingData.tags || []);
-      //   setNotes(taskData.sequenceTaggingData.notes || "");
-      // }
     }
   }, [taskData]);
 
@@ -85,13 +80,6 @@ export default function TaskViewPage() {
   }, [tasksData, taskId]);
 
   const updateStatus = trpc.task.updateStatus.useMutation({});
-
-  // Use auto-save hook
-  // useAutosave({
-  //   data: { ratings, justification, reviewNotes, tags, notes },
-  //   onSave: saveTask,
-  //   interval: 3000,
-  // });
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -175,7 +163,19 @@ export default function TaskViewPage() {
       toast.error("Failed to submit task");
     }
   };
-
+  const handleTranslationSubmitTask = async (
+    taskId:string,index:number, translationData:TranslationSegment
+  ) => {
+    if (!user?._id) return;
+    try {
+      
+      refetchTask();
+      toast.success("Task completed successfully");
+    } catch (error) {
+      console.error("Error submitting task:", error);
+      toast.error("Failed to submit task");
+    }
+  };
   const renderTaskInterface = () => {
     switch (project.type) {
       case "text_classification":
@@ -338,6 +338,10 @@ export default function TaskViewPage() {
         );
       case "sequence_tagging":
         return <p>sequence_tagging</p>;
+      case "human_translation":
+          return <TranslationUserView  task={taskData?.task} onSaveTranslation={(taskId,index, translationData)=>{console.log(taskId,index, translationData);
+          }}/>
+          ;
 
       default:
         return (
@@ -354,7 +358,7 @@ export default function TaskViewPage() {
     <div className="min-h-screen bg-background">
       <Header email={user?.email || ""} isAgentAdmin={true} />
       <main className="container mx-auto p-8">
-        <div className="max-w-4xl mx-auto">
+        <div className=" mx-auto">
           <div className="mb-8">
             <Link href={`/agent/projects/${project._id}`}>
               <Button variant="ghost" className="mb-4">
@@ -378,7 +382,7 @@ export default function TaskViewPage() {
                   )}
                 </div>
               </div>
-              <Badge
+              {project.type !== "human_translation" && <Badge
                 variant={
                   task.status === "completed"
                     ? "default"
@@ -390,7 +394,7 @@ export default function TaskViewPage() {
                 }
               >
                 {task.status.replace(/_/g, " ")}
-              </Badge>
+              </Badge>}
             </div>
 
             {renderTaskInterface()}

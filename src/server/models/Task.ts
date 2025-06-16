@@ -32,7 +32,22 @@ export type TTask = Task & {
   createdAt: string;
   updatedAt: string;
 };
-
+const TraslatedTaskSchema = new mongoose.Schema<TranslationTaskData>({
+  sourceText:{
+    type: String,
+    required: [true, "Source text is required"],
+  },
+  translatedText: {
+    type: String,
+    required: [true, "Translated text is required"],
+  },
+  comments:{
+    type:String
+  },
+  reviewNotes:{
+    type :  String
+  }
+})
 const TaskSchema = new mongoose.Schema<Task>(
   {
     name: {
@@ -67,7 +82,7 @@ const TaskSchema = new mongoose.Schema<Task>(
       type: Date,
     },
     translationData: {
-      type: Object,
+      type: [TraslatedTaskSchema],
     },
     postEditingData: {
       type: Object,
